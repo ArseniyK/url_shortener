@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <link rel="stylesheet" href="/static/css/css.css"/>
+    <title>Url shortener</title>
+</head>
+<body>
+<div class="container">
+    <div class="row col">
+        <h1>Short your urls</h1>
+    </div>
+    <div class="row col">
+        <form onsubmit="return shorten(event)">
+            <input id="url" type="url" name="url" placeholder="Enter your long url" required/>
+            <input type="submit" value="Shorten">
+        </form>
+    </div>
+    <div id="result" class="row col">
+        {% for url in lasts %}
+        <div class="row">
+            <div class="col content">
+                <div class="row">
+                    <div class="col url_title">Short url:</div>
+                    <a class="col truncate" href="{{url.short_url}}">{{url.short_url}}</a>
+                </div>
+                <div class="row">
+                    <div class="col url_title">Long url:</div>
+                    <a class="truncate col" href="{{url.long_url}}">{{url.long_url}}</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div class="row col footer">
+    <p>
+        Made by <a href="https://github.com/ArseniyK">Arseniy Krasnov</a>
+        |
+        <a href="https://github.com/ArseniyK/url_shortener">Source code</a>
+        |
+        <a href="mailto:arseniy@krasnoff.org">Contact</a>
+    </p>
+</div>
+</body>
+</html>
+<script>
+    function add_result(url) {
+        let result_parent = document.getElementById('result');
+        let result_div = document.createElement('div');
+        result_div.className = "row";
+        result_div.innerHTML = `<div class="col content"><div class="row"><div class="col url_title">Short url:</div><a class="col truncate" href="${url.short_url}">${url.short_url}</a></div><div class="row"><div class="col url_title">Long url:</div> <a class="truncate col" href="${url.long_url}">${url.long_url}</a></div></div>`;
+        result_parent.prepend(result_div);
+    }
+
+    async function shorten(e) {
+        e.preventDefault()
+        let url = document.getElementById('url').value;
+        let response = await fetch('/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify({url: url})
+        });
+        if (response.status == 200) {
+            let result = await response.json();
+            add_result(result);
+        }
+    }
+</script>

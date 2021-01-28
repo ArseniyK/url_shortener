@@ -1,0 +1,96 @@
+.row .row { margin:  0 -1.5em; }
+.col      { padding: 0  1.5em; }
+
+.row:after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+@media only screen { .col {
+    float: left;
+    width: 100%;
+    box-sizing: border-box;
+}}
+
+html, body {
+	height: 100%;
+}
+body {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	margin: 0;
+}
+a {
+	color: #06f;
+}
+h1 {
+	font-size: 2.2em;
+}
+p{
+	font-size: 0.8125em;
+	line-height: 1.5;
+	margin: 0 0 1.5em;
+}
+
+.container {
+	margin: 0 auto;
+	max-width: 90em;
+	padding: 1em 0;
+	text-align: center;
+	height: 88%;
+}
+
+.content {
+	border: 1px dotted #aaa;
+    text-align: left;
+    margin: auto !important;
+	float: none !important;
+    width: 100%;
+    padding: 1rem 1.5rem;
+}
+
+.footer {
+	padding-top: 1.5em;
+	border-top: 1px dotted #aaa;
+	text-align: center;
+}
+
+#result {
+	margin-top: 1rem;
+}
+
+.truncate {
+    width: 90%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
+.url_title {
+	width: 8rem;
+}
+
+@media only screen and (min-width: 34em) {
+	p {
+		font-size: 0.875em;
+	}
+	.container {
+		padding: 1em;
+	}
+	h1 {
+		font-size: 2.6em;
+	}
+}
+
+@media only screen and (min-width: 54em) {
+	h1 {
+		font-size: 3em;
+	}
+}
+
+@media only screen and (min-width: 76em) {
+	h1 {
+		font-size: 3.2em;
+	}
+}
