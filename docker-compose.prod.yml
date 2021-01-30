@@ -1,0 +1,36 @@
+version: "3.6"
+services:
+  caddy:
+    image: "caddy:2.0.0"
+    restart: unless-stopped
+    env_file: ./config/.env
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile  # configuration
+      - caddy-config:/config  # configuation autosaves
+      - caddy-data:/data  # saving certificates
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+    networks:
+      - proxynet
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1g"
+        max-file: "3"
+  web:
+    <<: &web
+      build:
+        target: production_build
+        context: .
+        dockerfile: ./docker/Dockerfile
+      restart: unless-stopped
+    command: ./url_shortener
+    expose:
+      - 8000
+
+volumes:
+  caddy-config:
+  caddy-data:

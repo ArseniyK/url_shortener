@@ -12,10 +12,26 @@ services:
   redis:
     image: redis:6.0-alpine
     restart: unless-stopped
+    volumes:
+    - redisdata:/data
     ports:
       - "127.0.0.1:6379:6379"
     networks:
       - internal
+    command: redis-server --appendonly yes
+  web:
+    <<: &web
+      build:
+        target: builder
+        context: .
+        dockerfile: ./docker/Dockerfile
+      depends_on:
+        - redis
+      networks:
+        - internal
+        - proxynet
+      env_file: ./config/.env
+    command: cargo watch -x run
 
 networks:
   # Network for your proxy server and application to connect them,
@@ -23,3 +39,6 @@ networks:
   proxynet:
   # Network for your internals, use it by default:
   internal:
+
+volumes:
+  redisdata:

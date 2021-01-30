@@ -1,0 +1,31 @@
+# See https://caddyserver.com/docs
+
+# Email for Let's Encrypt expiration notices
+{
+  email {$TLS_EMAIL}
+}
+
+{$DOMAIN_NAME} {
+  # HTTPS options:
+  header Strict-Transport-Security max-age=31536000;
+
+  # Removing some headers for improved security:
+  header -Server
+
+  header /robots.txt {
+    User-agent *
+    Allow: /$
+    Disallow: /
+  }
+
+  # Serving dynamic requests:
+  reverse_proxy web:8000
+
+   # Allows to use `.gz` files when available:
+  encode gzip
+
+  # Logs:
+  log {
+	  output stdout
+  }
+}
