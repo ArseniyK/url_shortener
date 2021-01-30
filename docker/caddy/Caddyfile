@@ -5,7 +5,7 @@
   email {$TLS_EMAIL}
 }
 
-{$DOMAIN_NAME} {
+{$DOMAIN} {
   # HTTPS options:
   header Strict-Transport-Security max-age=31536000;
 
