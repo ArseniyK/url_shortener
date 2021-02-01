@@ -1,5 +1,6 @@
 use super::types::*;
 use async_trait::async_trait;
+use crate::urls::error::UrlError;
 
 pub struct UrlServiceImpl<A: UrlRepo> {
     pub url_repo: A
@@ -9,19 +10,19 @@ pub struct UrlServiceImpl<A: UrlRepo> {
 impl <A> UrlService for UrlServiceImpl<A>
     where A: UrlRepo + Sync + Send {
 
-    async fn shorten(&self, url: &str, user: &str) -> Option<Url> {
+    async fn shorten(&self, url: &str, user: &str) -> Result<Url, UrlError> {
         self.url_repo.generate_for_user(url, user).await
     }
 
-    async fn get(&self, id: &str) -> Option<Url>{
+    async fn get(&self, id: &str) -> Result<Url, UrlError>{
         let url = self.url_repo.get(id).await;
         match url {
-            Some(url) => { self.url_repo.increment_counter(id).await; Some(url)},
-            None => None,
+            Ok(url) => { self.url_repo.increment_counter(id).await.ok(); Ok(url)},
+            Err(e) => Err(e),
         }
     }
 
-    async fn new_user(&self) -> Option<String> {
+    async fn new_user(&self) -> Result<String, UrlError> {
          self.url_repo.new_user().await
     }
 
@@ -41,6 +42,7 @@ mod tests {
     async fn test_shorten_and_get_success() {
         let id= "test";
         let long_url = "http://test.com";
+        let user = "user";
 
         let url = Url {
             id: id.to_string(),
@@ -49,22 +51,22 @@ mod tests {
         };
 
         let mut url_repo = MockUrlRepo::new();
-        url_repo.expect_generate()
-            .return_const(url.clone());
+        url_repo.expect_generate_for_user()
+            .return_const(Ok(url.clone()));
         url_repo.expect_get()
             .with(eq(id.clone()))
-            .return_const(url.clone());
+            .return_const(Ok(url.clone()));
         url_repo.expect_increment_counter()
             .times(1)
-            .return_const(true);
+            .return_const(Ok(true));
 
         let sut = UrlServiceImpl{ url_repo };
 
-        let result = sut.shorten(&long_url).await;
+        let result = sut.shorten(&long_url, &user).await.ok();
         let expected = Some(url.clone());
         assert_eq!(expected, result);
 
-        let result = sut.get(&id).await;
+        let result = sut.get(&id).await.ok();
         let expected = Some(url.clone());
         assert_eq!(expected, result);
     }

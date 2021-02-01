@@ -56,8 +56,8 @@ async fn shorten<T: UrlService>(
 
     let result = service.shorten(&url_create.url, &user).await;
     match result {
-        Some(url) => Ok(HttpResponse::Ok().json(serialize(url))),
-        None => Ok(HttpResponse::BadRequest().finish())
+        Ok(url) => Ok(HttpResponse::Ok().json(serialize(url))),
+        _ => Ok(HttpResponse::BadRequest().finish())
     }
 }
 
@@ -67,10 +67,10 @@ pub async fn redirect<T: UrlService>(
 ) -> Result<HttpResponse, Error> {
     let result = service.get(&params.id).await;
     match result {
-        Some(result) => {
+        Ok(result) => {
             Ok(HttpResponse::MovedPermanently().header(http::header::LOCATION, result.url).finish())
         }
-        None => Ok(HttpResponse::BadRequest().finish())
+        _ => Ok(HttpResponse::BadRequest().finish())
     }
 }
 
@@ -96,10 +96,10 @@ mod tests {
 
         let mut url_service = MockUrlService::new();
         url_service.expect_shorten()
-            .with(eq("test"))
+            .with(eq("test"), eq("user"))
             .times(0)
-            .return_const(Some(url));
-        url_service.expect_new_user().return_const(Some("user".to_string()));
+            .return_const(Ok(url));
+        url_service.expect_new_user().return_const(Ok("user".to_string()));
         let url_service = web::Data::new(url_service);
 
         let mut sut = test::init_service(App::new().configure(|cfg| configure(url_service, cfg))).await;
@@ -124,10 +124,10 @@ mod tests {
 
         let mut url_service = MockUrlService::new();
         url_service.expect_shorten()
-            .with(eq("http://test.com"))
+            .with(eq("http://test.com"), eq("user"))
             .times(1)
-            .return_const(Some(url.clone()));
-        url_service.expect_new_user().return_const(Some("user".to_string()));
+            .return_const(Ok(url.clone()));
+        url_service.expect_new_user().return_const(Ok("user".to_string()));
         let url_service = web::Data::new(url_service);
 
         let mut sut = test::init_service(App::new().configure(|cfg| configure(url_service, cfg))).await;
@@ -151,7 +151,7 @@ mod tests {
         };
 
         let mut url_service = MockUrlService::new();
-        url_service.expect_get().return_const(Some(url.clone()));
+        url_service.expect_get().return_const(Ok(url.clone()));
         let url_service = web::Data::new(url_service);
 
         let mut sut = test::init_service(App::new().configure(|cfg| configure(url_service, cfg))).await;

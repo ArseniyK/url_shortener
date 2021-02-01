@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use validator::Validate;
 use serde::{Serialize, Deserialize};
+use super::error::UrlError;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Url {
@@ -32,19 +33,19 @@ pub struct RedirectParams {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait UrlService {
-    async fn shorten(&self, url: &str, user: &str) -> Option<Url>;
-    async fn get(&self, id: &str) -> Option<Url>;
-    async fn new_user(&self) -> Option<String>;
+    async fn shorten(&self, url: &str, user: &str) -> Result<Url, UrlError>;
+    async fn get(&self, id: &str) -> Result<Url, UrlError>;
+    async fn new_user(&self) -> Result<String, UrlError>;
     async fn get_last_n_for_user(&self, user: &str, n:isize) -> Vec<Url>;
 }
 
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait UrlRepo {
-    async fn generate(&self, url: &str) -> Option<Url>;
-    async fn get(&self, id: &str) -> Option<Url>;
-    async fn increment_counter(&self, id: &str) -> bool;
-    async fn new_user(&self) -> Option<String>;
-    async fn generate_for_user(&self, url: &str, user: &str) -> Option<Url>;
+    async fn generate(&self, url: &str) -> Result<Url, UrlError>;
+    async fn get(&self, id: &str) -> Result<Url, UrlError>;
+    async fn increment_counter(&self, id: &str) -> Result<bool, UrlError>;
+    async fn new_user(&self) -> Result<String, UrlError>;
+    async fn generate_for_user(&self, url: &str, user: &str) -> Result<Url, UrlError>;
     async fn get_last_n_for_user(&self, user: &str, n:isize) -> Vec<Url>;
 }
