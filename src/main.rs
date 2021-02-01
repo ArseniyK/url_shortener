@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use actix_files;
-use actix_web::{App, HttpServer, web};
 use actix_identity::{CookieIdentityPolicy, IdentityService};
+use actix_web::{web, App, HttpServer};
 use harsh::Harsh;
 use tera::Tera;
 
@@ -14,7 +14,10 @@ fn configure(redis_client: Arc<redis::Client>, hashids: Harsh, cfg: &mut web::Se
     use crate::urls::api;
     use crate::urls::redis_url_repo::RedisUrlRepoImpl;
     use crate::urls::url_service::UrlServiceImpl;
-    let url_repo = RedisUrlRepoImpl { redis_client, hashids };
+    let url_repo = RedisUrlRepoImpl {
+        redis_client,
+        hashids,
+    };
     let url_service = UrlServiceImpl { url_repo };
     api::configure(web::Data::new(url_service), cfg);
 }
@@ -42,11 +45,8 @@ async fn main() {
                     .secure(false)
                     .max_age(315576000), // 10 years
             ))
-            .service(
-                actix_files::Files::new("/static/", "static/").use_last_modified(true)
-            )
+            .service(actix_files::Files::new("/static/", "static/").use_last_modified(true))
             .configure(|cfg| configure(redis_client.clone(), hashids.clone(), cfg))
-
     };
 
     HttpServer::new(app)
