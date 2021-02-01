@@ -34,6 +34,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Cache target
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-target
+      with:
+        path: ./target
+        key: test-${{ env.cache-name }}-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          test-${{ env.cache-name }}-
     - name: Check
       run: cargo check --verbose
     - name: Fmt
