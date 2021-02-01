@@ -12,10 +12,11 @@
   # Removing some headers for improved security:
   header -Server
 
-  header /robots.txt {
-    User-agent *
-    Allow: /$
-    Disallow: /
+  respond /robots.txt 200 {
+    body "User-agent: *
+Allow: /$
+Disallow: /"
+    close
   }
 
   # Serving dynamic requests:
