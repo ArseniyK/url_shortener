@@ -1,0 +1,56 @@
+name: Continuous integration
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_LOG: debug,actix_web=debug
+  DOMAIN: localhost:8080
+  PORT: 8080
+  HASHID_MIN_LENGTH: 6
+  HASHID_SALT: salt
+  REDIS_URL: redis://127.0.0.1
+  SECRET: 397b6ad60d93275af050599ea9a6ec8a4e4eed0ebf0a19938c65d515dfe2
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache target
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-target
+      with:
+        path: ./target
+        key: test-${{ env.cache-name }}-${{ hashFiles('Cargo.toml') }}
+        restore-keys: |
+          test-${{ env.cache-name }}-
+    - name: Check
+      run: cargo check --verbose
+    - name: Fmt
+      run: cargo fmt -- --check --verbose
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
