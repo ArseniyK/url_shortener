@@ -162,7 +162,8 @@ mod tests {
     use std::sync::Arc;
 
     async fn setup() -> RedisUrlRepoImpl {
-        let redis_client = redis::Client::open("redis://127.0.0.1:6379").unwrap();
+        let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL env var needs to be set");
+        let redis_client = redis::Client::open(redis_url).unwrap();
         let hashids = hashids::configure().await;
         RedisUrlRepoImpl {
             redis_client: Arc::new(redis_client),

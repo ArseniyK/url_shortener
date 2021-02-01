@@ -13,7 +13,7 @@ env:
   PORT: 8080
   HASHID_MIN_LENGTH: 6
   HASHID_SALT: salt
-  REDIS_URL: redis://redis
+  REDIS_URL: redis://127.0.0.1
   SECRET: 397b6ad60d93275af050599ea9a6ec8a4e4eed0ebf0a19938c65d515dfe2
 
 jobs:
@@ -31,6 +31,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
 
     steps:
     - uses: actions/checkout@v2
