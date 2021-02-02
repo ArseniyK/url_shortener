@@ -65,7 +65,9 @@ async fn shorten<T: UrlService>(
     identity.remember(user.clone());
 
     let url_create = data.into_inner();
-    url_create.validate().map_err(error::ErrorBadRequest)?;
+    url_create
+        .validate()
+        .map_err(|e| error::ErrorBadRequest(serde_json::to_string(&e).unwrap()))?;
 
     let result = service.shorten(&url_create.url, &user).await;
     match result {
@@ -128,6 +130,7 @@ mod tests {
             .to_request();
         let resp = test::call_service(&mut sut, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        println!(rest.body())
     }
 
     #[actix_web::main]

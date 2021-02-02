@@ -20,7 +20,7 @@ pub struct ResponseUrl {
 
 #[derive(Debug, Validate, Deserialize, Serialize)]
 pub struct CreateUrl {
-    #[validate(url)]
+    #[validate(url(message = "Enter valid url"))]
     pub url: String,
 }
 
