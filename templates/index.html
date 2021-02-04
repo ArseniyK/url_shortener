@@ -8,33 +8,43 @@
 </head>
 <body>
 <div class="container">
-    <div class="row col">
-        <h1>Short your urls</h1>
-    </div>
-    <div class="row col">
+    <h1>Short your urls</h1>
+    <div class="block main_block">
         <form onsubmit="return shorten(event)">
-            <input id="url" type="url" name="url" placeholder="Enter your long url" required/>
-            <input type="submit" value="Shorten">
+            <div class="d-flex">
+                <input class="main_input" id="url" type="url" name="url" placeholder="Enter your long url" autofocus required/>
+                <input class="main_button" type="submit" value="Shorten">
+            </div>
         </form>
     </div>
-    <div id="result" class="row col">
-        {% for url in lasts %}
-        <div class="row">
-            <div class="col content">
-                <div class="row">
-                    <div class="col url_title">Short url:</div>
-                    <a class="col truncate" href="{{url.short_url}}">{{url.short_url}}</a>
+    <div class="block history">
+        <div class="history_header">
+            <h4>History</h4>
+        </div>
+        <div id="result">
+            {% for url in lasts %}
+            <div class="history_item" onclick="return copy(event)" data-url="{{url.short_url}}">
+                <div class="history_action">
+                    <div class="history_action_content">
+                       <div class="history_action_text">Copy</div>
+                    </div>
                 </div>
-                <div class="row">
-                    <div class="col url_title">Long url:</div>
-                    <a class="truncate col" href="{{url.long_url}}">{{url.long_url}}</a>
+                <div class="history_links">
+                    <div class="history_short_link">{{url.short_url}}</div>
+                    <div class="history_long_link">{{url.long_url}}</div>
+                </div>
+                <div class="history_clicks">
+                    {{ url.count }} clicks
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+    </div>
+    <div id="load_more" class="block load_more">
+        <a href="javascript:void(0);">Load more</a>
     </div>
 </div>
-<div class="row col footer">
+<div class="footer">
     <p>
         Made by <a href="https://github.com/ArseniyK">Arseniy Krasnov</a>
         |
@@ -46,17 +56,48 @@
 </body>
 </html>
 <script>
+
+    function copy(event) {
+        event.stopPropagation();
+        let target = event.target;
+        let short_link = target.dataset.url;
+        let textArea = document.createElement("textarea");
+
+        textArea.value = short_link;
+        textArea.style.display = 'none';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+    }
+
     function add_result(url) {
         let result_parent = document.getElementById('result');
         let result_div = document.createElement('div');
-        result_div.className = "row";
-        result_div.innerHTML = `<div class="col content"><div class="row"><div class="col url_title">Short url:</div><a class="col truncate" href="${url.short_url}">${url.short_url}</a></div><div class="row"><div class="col url_title">Long url:</div> <a class="truncate col" href="${url.long_url}">${url.long_url}</a></div></div>`;
+        result_div.innerHTML = `
+            <div class="history_item" onclick="return copy(event)" data-url="${url.short_url}">
+                <div class="history_action">
+                    <div class="history_action_content">
+                       <div class="history_action_text">Copy</div>
+                    </div>
+                </div>
+                <div class="history_links">
+                    <div class="history_short_link">${url.short_url}</div>
+                    <div class="history_long_link">${url.long_url}</div>
+                </div>
+                <div class="history_clicks">
+                    ${url.count} clicks
+                </div>
+            </div>
+        `;
         result_parent.prepend(result_div);
     }
 
     async function shorten(e) {
         e.preventDefault()
-        let url = document.getElementById('url').value;
+        let url_el = document.getElementById('url');
+        let url = url_el.value;
         let response = await fetch('/', {
             method: 'POST',
             headers: {
@@ -64,7 +105,8 @@
             },
             body: JSON.stringify({url: url})
         });
-        if (response.status == 200) {
+        if (response.status === 200) {
+            url_el.value = '';
             let result = await response.json();
             add_result(result);
         }

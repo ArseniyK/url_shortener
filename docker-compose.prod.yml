@@ -6,7 +6,7 @@ services:
     env_file: ./config/.env
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile  # configuration
-      - caddy-config:/config  # configuation autosaves
+      - caddy-config:/config  # configuration autosaves
       - caddy-data:/data  # saving certificates
     ports:
       - "80:80"
