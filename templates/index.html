@@ -17,8 +17,8 @@
             </div>
         </form>
     </div>
-    {% if urls.results %}
-    <div class="block history">
+
+    <div id="history" class="block history {% if urls.results %} d-block {% else %} d-none {% endif %}">
         <div class="history_header">
             <h4>History</h4>
         </div>
@@ -41,7 +41,6 @@
             {% endfor %}
         </div>
     </div>
-    {% endif %}
     <div id="load_more" class="block load_more {% if urls.next %} d-block {% else %} d-none {% endif %}" >
         <a id="next" href="javascript:void(0);" onclick="load_next(event)" data-next="{{ urls.next }}">Load more</a>
     </div>
@@ -138,6 +137,7 @@
         if (response.status === 200) {
             url_el.value = '';
             let result = await response.json();
+            document.getElementById('history').classList.remove('d-none');
             add_result(result, true);
         }
     }
