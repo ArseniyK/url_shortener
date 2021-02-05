@@ -69,7 +69,7 @@ pub async fn redirect<T: UrlService>(
 ) -> Result<HttpResponse, Error> {
     let result = service.get(&params.id).await;
     match result {
-        Ok(result) => Ok(HttpResponse::MovedPermanently()
+        Ok(result) => Ok(HttpResponse::Found()
             .header(http::header::LOCATION, result.url)
             .finish()),
         _ => Ok(HttpResponse::BadRequest().finish()),
@@ -172,6 +172,6 @@ mod tests {
 
         let req = test::TestRequest::get().uri("/test").to_request();
         let resp = test::call_service(&mut sut, req).await;
-        assert_eq!(resp.status(), StatusCode::MOVED_PERMANENTLY);
+        assert_eq!(resp.status(), StatusCode::FOUND);
     }
 }
