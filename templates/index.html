@@ -17,12 +17,13 @@
             </div>
         </form>
     </div>
+    {% if urls.results %}
     <div class="block history">
         <div class="history_header">
             <h4>History</h4>
         </div>
         <div id="result">
-            {% for url in lasts %}
+            {% for url in urls.results %}
             <div class="history_item" onclick="return copy(event)" data-url="{{url.short_url}}">
                 <div class="history_action">
                     <div class="history_action_content">
@@ -40,9 +41,11 @@
             {% endfor %}
         </div>
     </div>
-    <div id="load_more" class="block load_more">
-        <a href="javascript:void(0);">Load more</a>
+    {% endif %}
+    <div id="load_more" class="block load_more {% if urls.next %} d-block {% else %} d-none {% endif %}" >
+        <a id="next" href="javascript:void(0);" onclick="load_next(event)" data-next="{{ urls.next }}">Load more</a>
     </div>
+
 </div>
 <div class="footer">
     <p>
@@ -59,12 +62,11 @@
 
     function copy(event) {
         event.stopPropagation();
-        let target = event.target;
-        let short_link = target.dataset.url;
         let textArea = document.createElement("textarea");
-
-        textArea.value = short_link;
-        textArea.style.display = 'none';
+        textArea.value = event.target.dataset.url;
+        textArea.style.position = "absolute";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
@@ -72,7 +74,7 @@
         textArea.remove();
     }
 
-    function add_result(url) {
+    function add_result(url, prepend) {
         let result_parent = document.getElementById('result');
         let result_div = document.createElement('div');
         result_div.innerHTML = `
@@ -91,7 +93,35 @@
                 </div>
             </div>
         `;
-        result_parent.prepend(result_div);
+        prepend ? result_parent.prepend(result_div) : result_parent.append(result_div);
+    }
+
+    async function load_next(event) {
+        event.preventDefault();
+        let next_page = document.getElementById('next').dataset.next;
+        let results = await load_page(next_page);
+        if (results) {
+            if (results.next) {
+                document.getElementById('next').dataset.next = results.next;
+            } else {
+                document.getElementById('load_more').classList.add('d-none')
+                document.getElementById('load_more').classList.remove('d-block')
+            }
+
+            results.results.forEach( item => add_result(item, false))
+        }
+    }
+
+    async function load_page(page) {
+        let response = await fetch(`/?page=${page}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+        });
+        if (response.status === 200) {
+            return await response.json()
+        }
     }
 
     async function shorten(e) {
@@ -108,7 +138,7 @@
         if (response.status === 200) {
             url_el.value = '';
             let result = await response.json();
-            add_result(result);
+            add_result(result, true);
         }
     }
 </script>

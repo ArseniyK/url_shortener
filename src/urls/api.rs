@@ -12,27 +12,9 @@ pub fn configure<T: 'static + UrlService>(service: web::Data<T>, cfg: &mut web::
     cfg.route("/{id}", web::get().to(redirect::<T>));
 }
 
-fn serialize(url: Url) -> ResponseUrl {
-    ResponseUrl {
-        id: url.id.clone(),
-        short_url: build_url(url.id),
-        long_url: url.url.clone(),
-        count: url.count.clone(),
-    }
-}
-
-fn build_url(id: String) -> String {
-    let base_url = std::env::var("DOMAIN").expect("DOMAIN");
-    let schema: &str = if base_url.starts_with("localhost") {
-        "http://"
-    } else {
-        "https://"
-    };
-    format!("{}{}/{}", schema, base_url, id)
-}
-
 pub async fn index<T: UrlService>(
     service: web::Data<T>,
+    page_params: web::Query<PageParams>,
     identity: Identity,
     template: web::Data<Tera>,
 ) -> Result<HttpResponse, Error> {
@@ -40,18 +22,23 @@ pub async fn index<T: UrlService>(
         .identity()
         .unwrap_or(service.new_user().await.unwrap());
     identity.remember(user.clone());
-    let mut ctx = tera::Context::new();
-    let lasts: Vec<ResponseUrl> = service
-        .get_last_n_for_user(&*user, 25)
-        .await
-        .into_iter()
-        .map(|u: Url| serialize(u))
-        .collect();
-    ctx.insert("lasts", &lasts);
-    let res = template
-        .render("index.html", &ctx)
-        .map_err(|_| error::ErrorInternalServerError("Template error"))?;
-    Ok(HttpResponse::Ok().body(res))
+
+    match page_params.page {
+        Some(page) => {
+            let urls: Paginated<ResponseUrl> = service.get_urls_for_user(&*user, page).await.into();
+            Ok(HttpResponse::Ok().json(urls))
+        }
+        None => {
+            let mut ctx = tera::Context::new();
+            let urls: Paginated<ResponseUrl> = service.get_urls_for_user(&*user, 0).await.into();
+            ctx.insert("urls", &urls);
+
+            let res = template
+                .render("index.html", &ctx)
+                .map_err(|_| error::ErrorInternalServerError("Template error"))?;
+            Ok(HttpResponse::Ok().body(res))
+        }
+    }
 }
 
 async fn shorten<T: UrlService>(
@@ -71,7 +58,7 @@ async fn shorten<T: UrlService>(
 
     let result = service.shorten(&url_create.url, &user).await;
     match result {
-        Ok(url) => Ok(HttpResponse::Ok().json(serialize(url))),
+        Ok(url) => Ok(HttpResponse::Ok().json(ResponseUrl::from(url))),
         _ => Ok(HttpResponse::BadRequest().finish()),
     }
 }
@@ -130,7 +117,6 @@ mod tests {
             .to_request();
         let resp = test::call_service(&mut sut, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-        println!(rest.body())
     }
 
     #[actix_web::main]

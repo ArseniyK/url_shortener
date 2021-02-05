@@ -137,12 +137,12 @@ impl UrlRepo for RedisUrlRepoImpl {
         }
     }
 
-    async fn get_last_n_for_user(&self, user: &str, n: isize) -> Vec<Url> {
+    async fn get_urls_for_user(&self, user: &str, start: isize, stop: isize) -> Vec<Url> {
         let redis_client = &*self.redis_client;
         let mut res = vec![];
         if let Ok(mut conn) = redis_client.get_async_connection().await {
             let ids: Vec<String> = conn
-                .zrevrange(self.get_user_key(user), 0, n - 1)
+                .zrevrange(self.get_user_key(user), start, stop - 1)
                 .await
                 .unwrap_or(vec![]);
             for key in ids.into_iter() {
@@ -152,6 +152,16 @@ impl UrlRepo for RedisUrlRepoImpl {
             }
         }
         res
+    }
+
+    async fn count_urls_for_user(&self, user: &str) -> Result<isize, UrlError> {
+        let redis_client = &*self.redis_client;
+        redis_client
+            .get_async_connection()
+            .await?
+            .zcount(self.get_user_key(user), "-inf", "+inf")
+            .await
+            .map_err(|_| UrlError)
     }
 }
 
@@ -240,17 +250,51 @@ mod tests {
 
     #[actix_web::main]
     #[test]
-    async fn test_get_last_for_user() {
+    async fn get_urls_for_user() {
+        let user = "get_user";
         let sut = setup().await;
+        let user_key = sut.get_user_key(user);
+        let _delete: Option<isize> = sut
+            .redis_client
+            .get_async_connection()
+            .await
+            .ok()
+            .unwrap()
+            .del(user_key)
+            .await
+            .ok();
         let url_1 = sut
-            .generate_for_user("http://test.com", "user_new")
+            .generate_for_user("http://test.com", user)
             .await
             .unwrap();
         let url_2 = sut
-            .generate_for_user("http://test.com", "user_new")
+            .generate_for_user("http://test.com", user)
             .await
             .unwrap();
-        let res = sut.get_last_n_for_user("user_new", 2).await;
-        assert_eq!(res, vec![url_2, url_1]);
+        let res = sut.get_urls_for_user(user, 0, 1).await;
+        assert_eq!(res, vec![url_2.clone()]);
+        let res = sut.get_urls_for_user(user, 0, 2).await;
+        assert_eq!(res, vec![url_2.clone(), url_1.clone()]);
+    }
+
+    #[actix_web::main]
+    #[test]
+    async fn test_count_for_user() {
+        let user = "count_user";
+        let sut = setup().await;
+        let user_key = sut.get_user_key(user);
+        let _delete: Option<isize> = sut
+            .redis_client
+            .get_async_connection()
+            .await
+            .ok()
+            .unwrap()
+            .del(user_key)
+            .await
+            .ok();
+        let _ = sut.generate_for_user("http://test.com", user).await;
+        let _ = sut.generate_for_user("http://test.com", user).await;
+        let res = sut.count_urls_for_user(user).await.unwrap();
+        assert_eq!(res, 2);
     }
 }

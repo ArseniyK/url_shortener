@@ -35,10 +35,19 @@ p{
 	flex-wrap: wrap;
 }
 
+.d-none {
+	display: none;
+}
+
+.d-block {
+	display: block;
+}
+
 .container {
 	margin: 0 auto;
 	max-width: 1180px;
 	padding: 1em 0;
+	min-height: calc(100vh - 70px);
 }
 
 .block {
@@ -218,7 +227,6 @@ p{
 }
 
 .footer {
-	padding-top: 1em;
 	text-align: center;
 }
 

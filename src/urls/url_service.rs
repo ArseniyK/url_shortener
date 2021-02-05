@@ -30,8 +30,27 @@ where
         self.url_repo.new_user().await
     }
 
-    async fn get_last_n_for_user(&self, user: &str, n: isize) -> Vec<Url> {
-        self.url_repo.get_last_n_for_user(user, n).await
+    async fn get_urls_for_user(&self, user: &str, page: isize) -> Paginated<Url> {
+        let page_size: isize = 25;
+        let start: isize = page_size * page;
+        let stop: isize = start + page_size;
+        let total: isize = self.url_repo.count_urls_for_user(user).await.unwrap_or(0);
+        let page_count: isize = total / page_size;
+        let next: Option<isize> = if page < (page_count - 1) {
+            Some(page + 1)
+        } else {
+            None
+        };
+        let prev: Option<isize> = if page > 0 { Some(page - 1) } else { None };
+        let results = self.url_repo.get_urls_for_user(user, start, stop).await;
+
+        Paginated {
+            total,
+            page_count,
+            next,
+            prev,
+            results,
+        }
     }
 }
 
