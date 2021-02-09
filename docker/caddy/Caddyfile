@@ -12,6 +12,10 @@
   # Removing some headers for improved security:
   header -Server
 
+  file {
+	try_files /favicon.ico /static/favicon/favicon.ico
+  }
+
   respond /robots.txt 200 {
     body "User-agent: *
 Allow: /static/*
